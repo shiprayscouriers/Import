@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ray's Couriers - Logistics, Mailbox & Package Management</title>
+    <meta name="description" content="Ray's Couriers is a production-ready web application for courier and mailbox management, featuring customer portals, employee dashboards, admin panels, package tracking, invoicing, and payment processing." />
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" crossorigin href="/assets/target.css">
+    <link rel="stylesheet" id="fonts-code" href="/assets/fonts-code.css">
+    <script>
+      (function () {
+        const redirect = new URLSearchParams(location.search).get('redirect');
+        if (redirect && redirect !== location.pathname) {
+          history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script id="md-click">
+      window.mdClick = e => {
+        const target = e.target;
+        const {href, target: linkTarget} = target.dataset || {};
+        const appType = 'web';
+        const isBlank = linkTarget === '_blank';
+        if (!href) return;
+        e.stopPropagation();
+        e.preventDefault();
+        if (isBlank || href.startsWith('http')) {
+          let finalHref = href;
+          if (appType === 'miniapp' && !href.startsWith('http')) {
+            finalHref = window.location.href.split('#')[0] + '#/' + href;
+          }
+          window.open(finalHref, linkTarget || '_self');
+          return;
+        }
+        const finalHref = href.startsWith('/') ? href : '/' + href;
+        if (appType === 'miniapp') {
+          window.location.hash = finalHref;
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } else {
+          window.history.pushState({}, '', finalHref);
+          window.dispatchEvent(new Event('popstate'));
+        }
+      };
+      document.addEventListener('click', window.mdClick, true);
+    </script>
+    <script src="/assets/mock-db.js"></script>
+    <script src="/assets/camera-scanner.js"></script>
+    <script type="module" crossorigin src="/assets/app.bundle.js"></script>
+  </body>
+</html>

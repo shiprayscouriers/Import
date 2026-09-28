@@ -1,0 +1,8 @@
+{
+  "name": "Ray's Couriers - Freight Forwarding & Mailbox System",
+  "description": "Production-ready courier, freight forwarding, and mailbox management web application featuring customer shipping portals, Miami warehouse intake, package release queue, POS cash cashier, and admin operations.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
