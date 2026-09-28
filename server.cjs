@@ -69,18 +69,65 @@ const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, 'http://localhost');
   const decodedPath = decodeURIComponent(requestUrl.pathname);
 
-  // Handle mock API endpoints (email sending, user registration, notifications, etc.)
+  // Handle mock and proxy API endpoints (email sending, user registration, notifications, etc.)
   if (decodedPath.startsWith('/api/mock-fn/') || decodedPath.startsWith('/api/')) {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+      if (req.method === 'OPTIONS') {
+        res.statusCode = 200;
+        res.end();
+        return;
+      }
+
+      let parsed = {};
+      try { parsed = JSON.parse(body || '{}'); } catch(e) {}
+
+      // Resend real email integration
+      const resendKey = parsed.apiKey || parsed.resend_api_key || req.headers['x-resend-key'] || process.env.RESEND_API_KEY;
+      if (decodedPath.includes('send-email') && resendKey && resendKey.startsWith('re_')) {
+        try {
+          const fetchFn = globalThis.fetch;
+          if (fetchFn) {
+            const rRes = await fetchFn('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + resendKey.trim()
+              },
+              body: JSON.stringify({
+                from: parsed.from || "Ray's Couriers <onboarding@resend.dev>",
+                to: Array.isArray(parsed.to || parsed.recipient) ? (parsed.to || parsed.recipient) : [parsed.to || parsed.recipient],
+                subject: parsed.subject || "Ray's Couriers Notification",
+                text: parsed.text || parsed.body || "",
+                html: parsed.html || (parsed.body ? parsed.body.replace(/\n/g, '<br>') : undefined)
+              })
+            });
+            const rData = await rRes.json();
+            res.statusCode = rRes.ok ? 200 : 400;
+            res.end(JSON.stringify({
+              code: rRes.ok ? 'SUCCESS' : 'ERROR',
+              status: rRes.ok ? 'success' : 'error',
+              message: rRes.ok ? 'Email dispatched via Resend API' : 'Resend API returned error',
+              data: rData,
+              timestamp: new Date().toISOString()
+            }));
+            return;
+          }
+        } catch(err) {
+          console.warn('[Server] Resend proxy exception:', err.message);
+        }
+      }
+
       res.statusCode = 200;
       res.end(JSON.stringify({
         code: 'SUCCESS',
         status: 'success',
-        message: 'Email / Action processed successfully',
+        message: 'Action processed successfully',
         timestamp: new Date().toISOString()
       }));
     });
