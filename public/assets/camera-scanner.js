@@ -317,6 +317,7 @@
 
   // Floating trigger button on scan / warehouse views
   function injectFloatingScanButton() {
+    return; // Disabled per user request for physical barcode scanner use
     if (document.getElementById('rays-camera-scan-floating-btn')) return;
 
     const btn = document.createElement('button');
@@ -381,9 +382,9 @@
 
   // Auto attach to DOM
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectFloatingScanButton);
+    // floating button disabled
   } else {
-    injectFloatingScanButton();
+    // floating button removed per user request: // floating button disabled
   }
 
   // Also monitor URL changes for single-page routing
